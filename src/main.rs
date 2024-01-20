@@ -2,15 +2,17 @@
 #![no_main]
 
 // use alloc::string::ToString;
-use hal::{
-    clock::ClockControl, gpio::IO, i2c::I2C, peripherals::Peripherals, prelude::*,
-    spi::SpiDataMode, Delay, Rng, Rtc,
-};
 
-use embedded_io::*;
+// use alloc::{borrow::ToOwned, string::ToString};
+use chrono::{DateTime, TimeZone, Utc};
+// use embedded_io::*;
 use embedded_svc::{
     ipv4::Interface,
     wifi::{AccessPointInfo, ClientConfiguration, Configuration, Wifi},
+};
+use hal::{
+    clock::ClockControl, gpio::IO, i2c::I2C, peripherals::Peripherals, prelude::*,
+    spi::SpiDataMode, Delay, Rng, Rtc,
 };
 
 use esp_backtrace as _;
@@ -89,7 +91,7 @@ fn main() -> ! {
         .into_buffered_graphics_mode();
     display.init().unwrap();
 
-    // Specify different text styles
+    // text styles
     let text_style = MonoTextStyleBuilder::new()
         .font(&FONT_6X10)
         .text_color(BinaryColor::On)
@@ -212,10 +214,28 @@ fn main() -> ! {
 
     println!("Unix time: {} ", unix_time);
 
+    let human_readable: DateTime<Utc> = Utc.timestamp_opt(unix_time as i64, 0).unwrap();
+
+    println!("Time {}", human_readable);
+
     loop {
         // println!("Making HTTP request");
-        let human_readable = get_utc_timestamp(&rtc, unix_time, 3600 * 3);
+        // let human_readable = get_utc_timestamp(&rtc, unix_time, 3600 * 3);
+        // let human_readable: DateTime<Utc> = Utc.timestamp_opt(unix_time as i64, 0).unwrap();
+
         println!("Time {}", human_readable);
+
+        // Text::with_baseline(
+        //     // &format!("Moscow, Russia:{}", resp_weather),
+        //     "heh",
+        //     Point::new(0, 0),
+        //     text_style,
+        //     Baseline::Top,
+        // )
+        // .draw(&mut display);
+        // display.flush();
+        // display.clear(BinaryColor::Off).unwrap();
+
         // socket.work();
 
         // Open the socket
