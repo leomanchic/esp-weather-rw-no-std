@@ -1,11 +1,8 @@
 #![no_std]
 #![no_main]
 
-// use alloc::string::ToString;
-
-// use alloc::{borrow::ToOwned, string::ToString};
-use chrono::{DateTime, TimeZone, Utc};
-// use embedded_io::*;
+use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
+use core::fmt::Write;
 use embedded_svc::{
     ipv4::Interface,
     wifi::{AccessPointInfo, ClientConfiguration, Configuration, Wifi},
@@ -14,9 +11,10 @@ use hal::{
     clock::ClockControl, gpio::IO, i2c::I2C, peripherals::Peripherals, prelude::*,
     spi::SpiDataMode, Delay, Rng, Rtc,
 };
+use heapless::String;
 
 use esp_backtrace as _;
-use esp_println::{print, println};
+use esp_println::println;
 use esp_wifi::{
     current_millis, initialize,
     wifi::{utils::create_network_interface, WifiError, WifiStaDevice},
@@ -32,7 +30,7 @@ use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
     prelude::*,
-    text::{Alignment, Baseline, Text},
+    text::{Baseline, Text},
 };
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
@@ -43,17 +41,11 @@ const PASSWORD: &str = "GALA2015";
 fn main() -> ! {
     let peripherals = Peripherals::take();
     let mut system = peripherals.SYSTEM.split();
-    // Set clocks at maximum frequency
-    // let clocks =
-
-    // Create a timer and initialize the Wi-Fi
-    // let timer =
-    // let init =
 
     // Configure Wifi
     let wifi = peripherals.WIFI;
     let mut socket_set_entries: [SocketStorage; 3] = Default::default();
-    let mut rtc = Rtc::new(peripherals.RTC_CNTL);
+    let rtc = Rtc::new(peripherals.RTC_CNTL);
     let clocks = ClockControl::max(system.clock_control).freeze();
     let timer = hal::timer::TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
     let init = initialize(
@@ -210,31 +202,52 @@ fn main() -> ! {
         panic!("No timestamp received");
     }
     unix_time = response.headers.get_unix_timestamp();
+    // let timer = embedded_svc::sys_time::SystemTime::now(&self);
     // let human_readable = get_utc_timestamp(&rtc, unix_time, rtc_offset);
 
     println!("Unix time: {} ", unix_time);
 
-    let human_readable: DateTime<Utc> = Utc.timestamp_opt(unix_time as i64, 0).unwrap();
+    // let human_readable: DateTime<Utc> = Utc.timestamp_opt(unix_time as i64, 0).unwrap();
 
-    println!("Time {}", human_readable);
+    // println!("Time {} {}", human_readable, rtc.get_time_raw());
 
     loop {
         // println!("Making HTTP request");
         // let human_readable = get_utc_timestamp(&rtc, unix_time, 3600 * 3);
         // let human_readable: DateTime<Utc> = Utc.timestamp_opt(unix_time as i64, 0).unwrap();
+        let human_readable = get_utc_timestamp(&rtc, unix_time, rtc_offset);
+        let human_readable: DateTime<Utc> = Utc.timestamp_opt(human_readable as i64, 0).unwrap();
 
-        println!("Time {}", human_readable);
+        let mut buffer: String<32> = heapless::String::new();
+        write!(
+            buffer,
+            "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}",
+            human_readable.year(),
+            human_readable.month(),
+            human_readable.day(),
+            human_readable.hour(),
+            human_readable.minute(),
+            human_readable.second()
+        )
+        .unwrap();
 
-        // Text::with_baseline(
-        //     // &format!("Moscow, Russia:{}", resp_weather),
-        //     "heh",
-        //     Point::new(0, 0),
-        //     text_style,
-        //     Baseline::Top,
-        // )
-        // .draw(&mut display);
-        // display.flush();
-        // display.clear(BinaryColor::Off).unwrap();
+        // println!("Time {} {}", human_readable, buffer);
+
+        // println!("Time {} {}", human_readable, unix_time);
+
+        Text::with_baseline(
+            // &format!("Moscow, Russia:{}", resp_weather),
+            &buffer,
+            Point::new(0, 0),
+            text_style,
+            Baseline::Top,
+        )
+        .draw(&mut display)
+        .unwrap();
+        display.flush().unwrap();
+        display.clear(BinaryColor::Off).unwrap();
+
+        delay.delay_ms(1000u32);
 
         // socket.work();
 

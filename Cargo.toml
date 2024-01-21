@@ -20,6 +20,7 @@ ssd1306 = "0.8.4"
 ntp-nostd = "0.0.1"
 chrono = {version = "0.4.31",default-features = false }
 
+
 # This is necessary in order for WIFI to work
 [profile.dev.package.esp-wifi]
 opt-level = 3
