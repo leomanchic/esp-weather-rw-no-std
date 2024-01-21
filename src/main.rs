@@ -1,8 +1,8 @@
 #![no_std]
 #![no_main]
 
-use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
-use core::fmt::Write;
+use chrono::{DateTime, Datelike, Duration, TimeZone, Timelike, Utc};
+use core::{fmt::Write, ops::Add};
 use embedded_svc::{
     ipv4::Interface,
     wifi::{AccessPointInfo, ClientConfiguration, Configuration, Wifi},
@@ -213,15 +213,15 @@ fn main() -> ! {
 
     loop {
         // println!("Making HTTP request");
-        // let human_readable = get_utc_timestamp(&rtc, unix_time, 3600 * 3);
-        // let human_readable: DateTime<Utc> = Utc.timestamp_opt(unix_time as i64, 0).unwrap();
         let human_readable = get_utc_timestamp(&rtc, unix_time, rtc_offset);
-        let human_readable: DateTime<Utc> = Utc.timestamp_opt(human_readable as i64, 0).unwrap();
+        let human_readable: DateTime<Utc> = Utc
+            .timestamp_opt((human_readable + 10800) as i64, 0)
+            .unwrap();
 
         let mut buffer: String<32> = heapless::String::new();
         write!(
             buffer,
-            "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}",
+            "{:04}-{:02}-{:02} T{:02}:{:02}:{:02}",
             human_readable.year(),
             human_readable.month(),
             human_readable.day(),
@@ -230,11 +230,6 @@ fn main() -> ! {
             human_readable.second()
         )
         .unwrap();
-
-        // println!("Time {} {}", human_readable, buffer);
-
-        // println!("Time {} {}", human_readable, unix_time);
-
         Text::with_baseline(
             // &format!("Moscow, Russia:{}", resp_weather),
             &buffer,
@@ -248,48 +243,6 @@ fn main() -> ! {
         display.clear(BinaryColor::Off).unwrap();
 
         delay.delay_ms(1000u32);
-
-        // socket.work();
-
-        // Open the socket
-        // socket.open(IpAddress::v4(192, 168, 69, 1), 24).unwrap();
-
-        // Write and flush the socket
-        // socket...
-        // socket...
-        // socket.flush().unwrap();
-        // let http_get = "GET ".to_owned() + "https://wttr.in/" + " HTTP/1.1\r\n";
-        // socket.sen(http_get.as_ref()).expect("cannot send");
-        //         let http_host = "Host: ".to_owned() + url.host_str().unwrap() + "\r\n";
-        //         socket.send_slice(http_host.as_ref()).expect("cannot send");
-        //         socket
-        //             .send_slice(b"Connection: close\r\n")
-        //             .expect("cannot send");
-        //         socket.send_slice(b"\r\n").expect("cannot send");
-
-        // let wait_end = current_millis() + 20 * 1000;
-        // loop {
-        //     let mut buffer = [0u8; 512];
-        //     if let Ok(len) = socket.read(&mut buffer) {
-        //         let to_print = unsafe { core::str::from_utf8_unchecked(&buffer[..len]) };
-        //         print!("{}", to_print);
-        //     } else {
-        //         break;
-        //     }
-
-        //     if current_millis() > wait_end {
-        //         println!("Timeout");
-        //         break;
-        //     }
-        // }
-        // println!();
-
-        // socket.disconnect();
-
-        // let wait_end = current_millis() + 5 * 1000;
-        // while current_millis() < wait_end {
-        //     socket.work();
-        // }
     }
 }
 fn get_utc_timestamp(rtc: &Rtc, unix_time: u32, rtc_offset: u64) -> u32 {
